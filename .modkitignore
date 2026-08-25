@@ -1,0 +1,6 @@
+# Matched as exact relative paths, so the suites are listed one by one.
+# They require engine modules to drive the real widget, which is a
+# private-require finding against a shipped archive -- and they are no use to
+# a player anyway.
+tests/radar_tests.lua
+tests/menu_tests.lua
