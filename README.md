@@ -141,19 +141,23 @@ a box stuck to that playfield sat in the middle of the 3D view. Depth test,
 mesh cull and stencil are also cleared before it draws, because a leaked 3D
 state is how a correctly placed 2D overlay still comes out blank.
 
-It stays out of the way on its own. Anything stacked over the world — a menu, a
-textbox, a battle, the save prompt — hides it, as does a script, a map fade or
-a fly animation. It is rebuilt only when the map, the clock period or the surf
-state actually changes, so walking a route does not re-read the encounter
-tables every frame.
+It stays out of the way on its own. An *opaque* state stacked over the world —
+a menu, a battle, the save prompt — hides it, as does a script, a map fade or
+a fly animation. A transparent lid (DRAMATIC_SHAPE's battle-exit fade) does
+not: the world is still the picture, and treating that lid as a cover left the
+overlay dark after voxel mode was switched off. It is rebuilt only when the
+map, the clock period or the surf state actually changes, so walking a route
+does not re-read the encounter tables every frame.
 
 Two details worth knowing if you go changing it. The ports disagree about where
 the world lives: Gen 1 pushes the overworld onto the state stack, while Gold
 keeps it on `game.world` and an *empty* stack is exactly what free roam looks
-like. The overlay therefore asks "is anything stacked on top of the world?",
-which is true on both rather than only one. And it deliberately does **not**
-use the engine's `acceptsMenuInput`, which goes false between tiles while the
-player is mid-step — that would strobe the box on every stride.
+like. The overlay therefore asks "is an opaque state stacked on top of the
+world?", which is true on both rather than only one. And it deliberately does
+**not** use the engine's `acceptsMenuInput`, which goes false between tiles
+while the player is mid-step — that would strobe the box on every stride. A
+`busy()` bolted onto the Gen 1 overworld module by another mod is ignored for
+the same reason; Gold's own `World:busy` still hides the list over a textbox.
 
 ## What it reads
 

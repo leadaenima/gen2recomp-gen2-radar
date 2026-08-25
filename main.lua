@@ -600,32 +600,42 @@ return function(mod)
   -- screen -- battle, title, save prompt -- so the overlay has to decide for
   -- itself when it is welcome.
   --
-  -- The two ports disagree about where the world lives. Gen 1 pushes the
-  -- overworld onto the state stack and marks it `isOverworld`. Gold does not
-  -- put its world on the stack at all: it hangs off game.world, and an EMPTY
-  -- stack is what free roam looks like (src/core/Game2.lua pipelineGate says
-  -- exactly that). One rule covers both without asking which engine is
-  -- running: the world is showing when nothing is stacked on top of it.
+  -- The world is showing when nothing OPAQUE is stacked on top of it.
+  -- DRAMATIC_SHAPE (battle-exit fade, loading veil) pushes transparent
+  -- states over the overworld and never pops them on some paths; treating
+  -- "anything on the stack" as a cover hid the overlay for the rest of the
+  -- session, even after voxel mode was switched off.
   local function worldActive(game, ow)
-    local stack = game.stack
+    local stack = game and game.stack
     if not (stack and stack.top) then return false end
     local top = stack:top()
-    return top == nil or top == ow
+    if top == nil or top == ow then return true end
+    if top.isOverworld then return true end
+    -- explicit transparent lid: the world is still the picture
+    if top.isOpaque == false then return true end
+    return false
   end
 
   -- Deliberately NOT the engine's own `acceptsMenuInput`: that goes false
   -- between tiles while the player is mid-step, so the box would strobe on
-  -- every stride. This is only the states where the world is not the player's
-  -- to move -- a script, a textbox, a map fade.
+  -- every stride. Gold's World:busy covers textboxes and scripted movement
+  -- that never become stack states; a busy() left on the Gen 1 module by
+  -- another mod is ignored, because that is how DRAMATIC_SHAPE kept this
+  -- overlay dead after voxel was turned off.
   local function worldBusy(ow)
-    if type(ow.busy) == "function" then
-      local ok, value = pcall(ow.busy, ow)
-      if ok and value then return true end
-    end
     if ow.transitioning or ow.flyAnim or ow.teleportOut then return true end
+    if ow.textbox or ow.mapSetup or ow.choicebox or ow.fishing
+        or ow.fieldMove or ow.headbutt then
+      return true
+    end
     local runner = ow.runner
     if type(runner) == "table" and type(runner.isRunning) == "function" then
       local ok, value = pcall(runner.isRunning, runner)
+      if ok and value then return true end
+    end
+    if type(ow.busy) == "function"
+        and (ow.vm or ow.stepBody or ow.moveState ~= nil) then
+      local ok, value = pcall(ow.busy, ow)
       if ok and value then return true end
     end
     return false
@@ -708,10 +718,31 @@ return function(mod)
     end
   end
 
+  local function liveWorld(game)
+    local ow = mod.world and mod.world:overworld()
+    if ow and ow.map then return ow end
+    ow = game and (game.world or game.overworld)
+    if ow and ow.map then return ow end
+    return nil
+  end
+
+  local function asViewport(viewport)
+    if type(viewport) == "table" then return viewport end
+    local w, h = 160, 144
+    if love.graphics and love.graphics.getDimensions then
+      local ok, dw, dh = pcall(love.graphics.getDimensions)
+      if ok and dw and dh then w, h = dw, dh end
+    end
+    return {
+      width = w, height = h, gameX = 0, gameY = 0,
+      gameWidth = w, gameHeight = h, scale = 1,
+    }
+  end
+
   local function drawOverlay(game, viewport)
     if mod.options:get("overlay") == false then return end
-    local ow = mod.world and mod.world:overworld()
-    if not (ow and ow.map) then return end
+    local ow = liveWorld(game)
+    if not ow then return end
     if not worldActive(game, ow) then return end
     if worldBusy(ow) then return end
 
@@ -786,8 +817,11 @@ return function(mod)
     -- resets because LÖVE's push("all") does not cover depth/cull/stencil on
     -- every runtime, and a voxel pipeline that leaked any of them would make
     -- a 2D box fail the depth test and vanish.
-    love.graphics.origin()
+    if love.graphics.origin then pcall(love.graphics.origin) end
     if love.graphics.setShader then love.graphics.setShader() end
+    if love.graphics.setColorMask then
+      pcall(love.graphics.setColorMask, true, true, true, true)
+    end
     if love.graphics.setDepthMode then pcall(love.graphics.setDepthMode) end
     if love.graphics.setMeshCullMode then
       pcall(love.graphics.setMeshCullMode, "none")
@@ -840,14 +874,16 @@ return function(mod)
     love.graphics.pop()
   end
 
-  -- After nextFn, and at a high wrap priority, so a graphics mod that also
-  -- paints this layer (DRAMATIC_SHAPE's HUD chrome, a second-screen compose)
-  -- cannot bury the list. 1000 beats the default, which is the wrapping mod's
-  -- own manifest priority -- 100 for this one, and 100 for DRAMATIC_SHAPE.
+  -- After nextFn (pcall'd so a graphics mod that throws in this layer cannot
+  -- swallow the list), and at a high wrap priority, so DRAMATIC_SHAPE's HUD
+  -- chrome cannot bury it. 1000 beats the default, which is the wrapping
+  -- mod's own manifest priority -- 100 for this one, and 100 for that one.
+  --
+  -- DRAMATIC_SHAPE also wraps Renderer:endFrame and can hand back no viewport
+  -- at all; asViewport synthesises a full-window one rather than going dark.
   mod.hooks:wrap("render.hud", function(nextFn, game, viewport)
-    local result = nextFn(game, viewport)
-    if type(viewport) == "table" then drawOverlay(game, viewport) end
-    return result
+    pcall(nextFn, game, viewport)
+    pcall(drawOverlay, game, asViewport(viewport))
   end, 1000)
 
   mod.hooks:wrap("ui.start_menu.items", function(nextFn, game, items)

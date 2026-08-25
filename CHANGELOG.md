@@ -4,6 +4,23 @@ All notable changes to this mod are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version
 numbers match `manifest.version`.
 
+## [1.4.3]
+
+### Fixed
+
+- DRAMATIC_SHAPE (and its Battle Art fork) still hid the overlay after voxel
+  mode was switched off. That mod wraps `Renderer:endFrame`, pushes transparent
+  fade states, and can leave a `busy()` on the overworld module. The overlay
+  treated any of those as "the world is not showing" and stayed dark for the
+  rest of the session.
+- Transparent stack lids (`isOpaque == false`) no longer count as a cover.
+- A `busy()` bolted onto the Gen 1 overworld module is ignored; Gold's own
+  `World:busy` (textboxes, the script VM) still hides the list.
+- `render.hud` wrappers that throw, and an `endFrame` that returns no
+  viewport, no longer swallow the overlay: the next function is pcall'd, the
+  draw is pcall'd, and a missing viewport becomes a full-window one.
+- If `mod.world:overworld()` misses, `game.world` / `game.overworld` is enough.
+
 ## [1.4.2]
 
 ### Fixed
