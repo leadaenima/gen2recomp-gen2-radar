@@ -1,0 +1,40 @@
+{
+  "modkit": "1.0.0",
+  "packed_at": "2026-08-25T13:50:01Z",
+  "id": "johto_radar",
+  "version": "1.0.0",
+  "api": 2,
+  "engine_range": ">=0.1.0 <2.0.0",
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 969,
+      "sha256": "925dca1f29379fcb9e359701a63d0182b29e668aabe4c24fc171805e808aa4c2"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4161,
+      "sha256": "fc3a6016c1d049616e39c1d8fc2be7e44039f2271222cc76ca9d5b99cbadb98a"
+    },
+    {
+      "path": "main.lua",
+      "bytes": 12131,
+      "sha256": "6af0abd168aefb4194ad7db041949f9468fc63344f8cac437e12233c4820ec35"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 659,
+      "sha256": "172af2fa6a27cd02476b029a3c557996842f53a5d7b5aa81c8be8ba37f6225a0"
+    },
+    {
+      "path": "mod.card",
+      "bytes": 1418,
+      "sha256": "a09f48fec310caafa1a998c908719508a36558c7e9523a9abc4af3c2662ba37d"
+    }
+  ],
+  "lint": {
+    "no_rom_content": "pass",
+    "schema": "pass",
+    "cross_refs": "pass"
+  }
+}

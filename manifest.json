@@ -1,0 +1,18 @@
+{
+  "id": "johto_radar",
+  "name": "Encounter Radar",
+  "version": "1.0.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "TOOL",
+  "games": [
+  "gen2"
+  ],
+  "game_version": ">=0.1.0 <2.0.0",
+  "priority": 100,
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "description": "A RADAR row in the START menu that lists every wild Pokemon the map you are standing on can produce, with odds and level ranges. Gen 2 keeps a separate grass table for morning, day and night and a separate table for each fishing rod, so LEFT and RIGHT page through all of them; the one the clock is on right now is marked NOW."
+}

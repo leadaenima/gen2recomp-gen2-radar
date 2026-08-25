@@ -1,0 +1,30 @@
+-- Sharing metadata.  Read by tooling and the manager detail pane; never
+-- by the loader's merge.
+return {
+  summary = "START menu radar: every wild mon this map can roll, by hour and by rod.",
+  author = "local",
+  contact = "",
+  tags = { "ui", "tool", "quality-of-life", "encounters", "gen2" },
+  differences = {
+    changed = {
+      "the START menu gains a RADAR row, anchored before SAVE",
+    },
+    added = {
+      "a paged screen listing the current map's grass, surf and rod tables with odds and level ranges",
+      "morning / day / night grass are separate pages, and the live one is marked NOW",
+      "an owned marker per row, read from the Pokedex",
+      "mod options: ENABLED and MARK OWNED",
+      "mod.exports.report(mapId, tod, mapDef) for other mods and for tests",
+    },
+    known = {
+      "swarms, the Bug Catching Contest and roaming legendaries are not encounter tables and do not appear",
+      "headbutt and rock smash have no extracted tables on this engine, so they get no page",
+      "odds come from the tables, so a mod that hooks encounter.roll is not reflected",
+      "Gen 1 data has no byTime or fish groups, so it collapses to one GRASS page",
+    },
+  },
+  credits = {
+    { who = "Gen2Recomped", for_ = "the encounters registry, field.fishGroups and the ui.start_menu.items seam" },
+  },
+  compat = { engine = ">=0.0.0-0 <2.0.0", modApi = 2 },
+}
