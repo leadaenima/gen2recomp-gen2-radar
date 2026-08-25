@@ -762,10 +762,20 @@ return function(mod)
     -- rest of the mod lives in, so the playfield transform goes on the stack
     -- here.  push("all") because Gen 1 raises render.hud unfenced, and a
     -- leaked colour would tint the next frame's own text.
+    -- The scale comes from the rectangle, never from viewport.scale: both ports
+    -- fill that field with fitScale(), which counts FRAMEBUFFER pixels per Game
+    -- Boy pixel, while gameX/gameY/gameWidth/gameHeight are LOVE window units.
+    -- They agree only at DPI 1 -- every desktop, and no Android device, where
+    -- the density is routinely 1.5 or 2.75.  Per axis, because dpiX and dpiY
+    -- are not always equal either.
+    local scaleX = (tonumber(viewport.gameWidth) or 0) / 160
+    local scaleY = (tonumber(viewport.gameHeight) or 0) / 144
+    if scaleX <= 0 then scaleX = tonumber(viewport.scale) or 1 end
+    if scaleY <= 0 then scaleY = scaleX end
+
     love.graphics.push("all")
     love.graphics.translate(viewport.gameX or 0, viewport.gameY or 0)
-    local scale = viewport.scale or 1
-    love.graphics.scale(scale, scale)
+    love.graphics.scale(scaleX, scaleY)
     -- push("all") saves the blend mode but does not reset it, and this hook
     -- runs straight off the end of the composite pass -- which is exactly the
     -- kind of place a premultiplied mode is left set.  A translucent panel is

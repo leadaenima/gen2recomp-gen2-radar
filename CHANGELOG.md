@@ -4,6 +4,23 @@ All notable changes to this mod are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version
 numbers match `manifest.version`.
 
+## [1.4.1]
+
+### Fixed
+
+- The walking overlay was invisible on high-DPI screens — in practice, on some
+  Android builds, while every desktop was fine. It was scaling the box by
+  `viewport.scale`, which both ports fill with `fitScale()`: framebuffer pixels
+  per Game Boy pixel. The rest of the viewport (`gameX`, `gameY`, `gameWidth`,
+  `gameHeight`) is in LOVE window units. Those two are the same number only when
+  the display density is exactly 1, which is every desktop and no phone. At a
+  density of 2.75 the overlay was drawn 2.75× too large from a correctly placed
+  origin, which puts a box anchored to the top *right* somewhere off the side of
+  the screen — hence present, drawing every frame, and impossible to see.
+- The scale is now derived from the playfield rectangle (`gameWidth / 160`,
+  `gameHeight / 144`), which is self-consistent whatever the density, and taken
+  per axis, since `dpiX` and `dpiY` are not always equal.
+
 ## [1.4.0]
 
 ### Added
