@@ -758,23 +758,42 @@ return function(mod)
     if tw > maxTiles then tw = maxTiles end
     local tx = 20 - tw
 
-    -- the viewport is in window units and the font draws in the 160x144 the
-    -- rest of the mod lives in, so the playfield transform goes on the stack
-    -- here.  push("all") because Gen 1 raises render.hud unfenced, and a
-    -- leaked colour would tint the next frame's own text.
-    -- The scale comes from the rectangle, never from viewport.scale: both ports
-    -- fill that field with fitScale(), which counts FRAMEBUFFER pixels per Game
-    -- Boy pixel, while gameX/gameY/gameWidth/gameHeight are LOVE window units.
-    -- They agree only at DPI 1 -- every desktop, and no Android device, where
-    -- the density is routinely 1.5 or 2.75.  Per axis, because dpiX and dpiY
-    -- are not always equal either.
-    local scaleX = (tonumber(viewport.gameWidth) or 0) / 160
-    local scaleY = (tonumber(viewport.gameHeight) or 0) / 144
+    -- Scale from the playfield RECTANGLE, never from viewport.scale: both ports
+    -- fill that field with fitScale() (framebuffer pixels per GB pixel), while
+    -- gameWidth/gameHeight are LOVE window units. They agree only at DPI 1.
+    local playW = tonumber(viewport.gameWidth) or 0
+    local playH = tonumber(viewport.gameHeight) or 0
+    local scaleX = playW / 160
+    local scaleY = playH / 144
     if scaleX <= 0 then scaleX = tonumber(viewport.scale) or 1 end
     if scaleY <= 0 then scaleY = scaleX end
 
+    -- Pin the 160x144 layout's top-right to the WINDOW's top-right whenever
+    -- the playfield is letterboxed. DRAMATIC_SHAPE's voxel pass (and Gold's
+    -- edge-to-edge overworld) already fill the window; the letterbox is only
+    -- where the engine still thinks a Game Boy screen is. Anchoring a corner
+    -- ornament to that letterbox puts it in the middle of the 3D view, which
+    -- reads as "the overlay is gone".
+    local originX = tonumber(viewport.gameX) or 0
+    local originY = tonumber(viewport.gameY) or 0
+    local winW = tonumber(viewport.width) or 0
+    local winH = tonumber(viewport.height) or 0
+    if winW > playW + 0.5 then originX = winW - 160 * scaleX end
+    if winH > playH + 0.5 then originY = 0 end
+
     love.graphics.push("all")
-    love.graphics.translate(viewport.gameX or 0, viewport.gameY or 0)
+    -- origin() because this hook can inherit a leftover transform; the 3D
+    -- resets because LÖVE's push("all") does not cover depth/cull/stencil on
+    -- every runtime, and a voxel pipeline that leaked any of them would make
+    -- a 2D box fail the depth test and vanish.
+    love.graphics.origin()
+    if love.graphics.setShader then love.graphics.setShader() end
+    if love.graphics.setDepthMode then pcall(love.graphics.setDepthMode) end
+    if love.graphics.setMeshCullMode then
+      pcall(love.graphics.setMeshCullMode, "none")
+    end
+    if love.graphics.setStencilTest then pcall(love.graphics.setStencilTest) end
+    love.graphics.translate(originX, originY)
     love.graphics.scale(scaleX, scaleY)
     -- push("all") saves the blend mode but does not reset it, and this hook
     -- runs straight off the end of the composite pass -- which is exactly the
@@ -821,10 +840,15 @@ return function(mod)
     love.graphics.pop()
   end
 
+  -- After nextFn, and at a high wrap priority, so a graphics mod that also
+  -- paints this layer (DRAMATIC_SHAPE's HUD chrome, a second-screen compose)
+  -- cannot bury the list. 1000 beats the default, which is the wrapping mod's
+  -- own manifest priority -- 100 for this one, and 100 for DRAMATIC_SHAPE.
   mod.hooks:wrap("render.hud", function(nextFn, game, viewport)
+    local result = nextFn(game, viewport)
     if type(viewport) == "table" then drawOverlay(game, viewport) end
-    return nextFn(game, viewport)
-  end)
+    return result
+  end, 1000)
 
   mod.hooks:wrap("ui.start_menu.items", function(nextFn, game, items)
     local out = nextFn(game, items)

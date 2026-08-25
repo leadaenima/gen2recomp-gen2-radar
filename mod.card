@@ -26,7 +26,7 @@ return {
       "headbutt and rock smash are extracted by only one of the two ports, so neither gets a page",
       "odds come from the tables, so a mod that hooks encounter.roll is not reflected",
       "Kanto's Old and Good Rods are global rules, so they show only where the map has a water table",
-      "the overlay sits over the top right of the playfield; OVERLAY WIDTH and OVERLAY ROWS size it, WALK OVERLAY turns it off",
+      "the overlay sits over the top right of the window when the world fills it (voxel, Gold zoom), otherwise the playfield; OVERLAY WIDTH and OVERLAY ROWS size it, WALK OVERLAY turns it off",
       "turning OVERLAY ODDS on inside the default width leaves five characters for the name; widen it to about 14",
     },
   },

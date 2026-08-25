@@ -124,14 +124,22 @@ it controls. It also pins the blend mode to `alpha` inside its own
 `push("all")`/`pop`, because `render.hud` fires straight off the end of the
 composite pass and inherits whatever mode that left set.
 
-It scales itself onto the playfield from the `gameWidth`/`gameHeight` the hook
-hands it, not from `viewport.scale`. Both ports fill that field with
-`fitScale()`, which counts framebuffer pixels per Game Boy pixel, while the rest
-of the viewport is in LOVE window units — the same number only at a display
-density of exactly 1. That holds on every desktop and on no phone, so trusting
-it drew the box two or three times too large and slid a top-right panel off the
-edge of the screen. The rectangle agrees with the origin at any density, and the
-two axes are taken separately, since `dpiX` and `dpiY` need not match.
+It scales itself from the `gameWidth`/`gameHeight` the hook hands it, not from
+`viewport.scale`. Both ports fill that field with `fitScale()`, which counts
+framebuffer pixels per Game Boy pixel, while the rest of the viewport is in LOVE
+window units — the same number only at a display density of exactly 1. That
+holds on every desktop and on no phone, so trusting it drew the box two or three
+times too large and slid a top-right panel off the edge of the screen. The
+rectangle agrees with the origin at any density, and the two axes are taken
+separately, since `dpiX` and `dpiY` need not match.
+
+When the window is larger than that letterbox — DRAMATIC_SHAPE's voxel world,
+Gold's edge-to-edge overworld, a tall phone — the overlay pins to the
+*window's* top-right instead of the letterbox's. The engine still reports the
+160x144 playfield even while a world pipeline has already filled the screen, and
+a box stuck to that playfield sat in the middle of the 3D view. Depth test,
+mesh cull and stencil are also cleared before it draws, because a leaked 3D
+state is how a correctly placed 2D overlay still comes out blank.
 
 It stays out of the way on its own. Anything stacked over the world — a menu, a
 textbox, a battle, the save prompt — hides it, as does a script, a map fade or

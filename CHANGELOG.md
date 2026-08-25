@@ -4,6 +4,23 @@ All notable changes to this mod are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version
 numbers match `manifest.version`.
 
+## [1.4.2]
+
+### Fixed
+
+- The walking overlay vanished next to DRAMATIC_SHAPE (and any other world
+  pipeline that fills the window). `render.hud` still hands over the 160x144
+  letterbox, even while the voxel pass has already covered the whole window, so
+  a box anchored to that letterbox's top-right sat in the middle of the 3D
+  view. The overlay now pins to the *window's* top-right whenever the playfield
+  is letterboxed, and keeps the Game Boy scale so the type stays the same size.
+- Leftover 3D graphics state (depth test, mesh cull, stencil, a bound shader)
+  is cleared before the box draws. LÖVE's `push("all")` does not cover those on
+  every runtime, and a leaked depth test is how a perfectly-placed 2D overlay
+  fails the test and draws nothing.
+- The overlay paints *after* other `render.hud` wrappers, at wrap priority
+  1000, so a graphics mod that also uses that layer cannot bury the list.
+
 ## [1.4.1]
 
 ### Fixed
